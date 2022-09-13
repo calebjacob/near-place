@@ -1,24 +1,28 @@
+import { Layout } from "@/components/Layout";
 import type { NextPage } from "next";
 import { useEffect, useState } from "react";
-import { Pixels } from "../../shared/types";
+import type { Pixels } from "../../shared/types";
+import { Canvas } from "../components/Canvas";
 import { useNear } from "../hooks/near";
 
 const Home: NextPage = () => {
   const [pixels, setPixels] = useState<Pixels>();
   const { contract, wallet } = useNear();
 
-  async function loadPixels() {
-    try {
-      const result = await contract?.getPixels();
-      setPixels(result);
-    } catch (e) {
-      console.log(e);
-    }
-  }
-
   useEffect(() => {
-    loadPixels();
-  }, []);
+    if (contract) {
+      const loadPixels = async () => {
+        try {
+          const result = await contract.getPixels();
+          setPixels(result);
+        } catch (e) {
+          console.log(e);
+        }
+      };
+
+      loadPixels();
+    }
+  }, [contract]);
 
   // function changeGreeting(e) {
   //   e.preventDefault();
@@ -38,19 +42,9 @@ const Home: NextPage = () => {
   if (!contract || !wallet) return null;
 
   return (
-    <div>
-      <p>{JSON.stringify(pixels || {})}</p>
-
-      {wallet.isSignedIn() ? (
-        <button type="button" onClick={() => wallet.signOut()}>
-          Sign Out
-        </button>
-      ) : (
-        <button type="button" onClick={() => wallet.signIn()}>
-          Sign In
-        </button>
-      )}
-    </div>
+    <Layout center>
+      <Canvas pixels={pixels} />
+    </Layout>
   );
 };
 

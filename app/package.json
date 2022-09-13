@@ -9,10 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "near-api-js": "^0.44.2",
-    "next": "12.3.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
     "@near-wallet-selector/core": "^7.0.0",
     "@near-wallet-selector/ledger": "^7.0.0",
     "@near-wallet-selector/math-wallet": "^7.0.0",
@@ -23,7 +19,13 @@
     "@near-wallet-selector/nightly": "^7.0.0",
     "@near-wallet-selector/nightly-connect": "^7.0.0",
     "@near-wallet-selector/sender": "^7.0.0",
-    "@near-wallet-selector/wallet-connect": "^7.0.0"
+    "@near-wallet-selector/wallet-connect": "^7.0.0",
+    "@stitches/react": "^1.2.8",
+    "@svgr/webpack": "^6.3.1",
+    "near-api-js": "^0.44.2",
+    "next": "12.3.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
     "@types/node": "18.7.17",

@@ -582,6 +582,7 @@ let NearPlace = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = call({}), _de
   // This method changes the state, for which it cost gas
   set_pixel(params) {
     log(`Saving pixel ${params.location} - ${params.pixel}`);
+    this.pixels = this.pixels || {};
     this.pixels[params.location] = params.pixel;
   }
 

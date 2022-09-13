@@ -25,6 +25,7 @@ export class NearPlace {
   @call({}) // This method changes the state, for which it cost gas
   set_pixel(params: SetPixelOptions): void {
     near.log(`Saving pixel ${params.location} - ${params.pixel}`);
+    this.pixels = this.pixels || {};
     this.pixels[params.location] = params.pixel;
   }
 }

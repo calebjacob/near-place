@@ -1,5 +1,5 @@
-import { SetPixelOptions } from "../../shared/types";
-import { Wallet } from "./wallet";
+import type { SetPixelOptions } from "../../shared/types";
+import type { Wallet } from "./wallet";
 
 export class Contract {
   wallet: Wallet;
