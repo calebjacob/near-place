@@ -1,14 +1,15 @@
 import type { CanvasPixel, Pixels } from "@/../shared/types";
 import { normalizePixels } from "@/utils/canvas";
-import { useEffect, useState } from "react";
+import { memo, MouseEventHandler, useEffect, useState } from "react";
 
 import * as S from "./styles";
 
 interface Props {
   pixels?: Pixels;
+  onPixelSelect?: (pixel: CanvasPixel, target: HTMLDivElement) => void;
 }
 
-export function Canvas(props: Props) {
+function CanvasInternal(props: Props) {
   const [pixels, setPixels] = useState<CanvasPixel[]>([]);
 
   useEffect(() => {
@@ -17,11 +18,32 @@ export function Canvas(props: Props) {
     }
   }, [props.pixels]);
 
+  const handlePixelClick: MouseEventHandler = (event) => {
+    const target = event.target as HTMLDivElement;
+    const location = target.getAttribute("data-location");
+
+    if (location) {
+      const pixel = pixels.find((p) => p.location === location);
+      if (pixel && props.onPixelSelect) props.onPixelSelect(pixel, target);
+    }
+  };
+
   return (
-    <S.Root>
-      {pixels.map((pixel) => (
-        <S.Pixel key={pixel.location} css={{ background: pixel.color }} />
-      ))}
-    </S.Root>
+    <>
+      <S.Canvas onClick={handlePixelClick}>
+        {pixels.map((pixel) => (
+          <S.Pixel
+            role="button"
+            aria-label="Edit Pixel"
+            tabIndex={0}
+            key={pixel.location}
+            css={{ background: pixel.color }}
+            data-location={pixel.location}
+          />
+        ))}
+      </S.Canvas>
+    </>
   );
 }
+
+export const Canvas = memo(CanvasInternal);

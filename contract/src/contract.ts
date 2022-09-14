@@ -1,5 +1,5 @@
 import { NearBindgen, near, call, view } from "near-sdk-js";
-import { Pixel, Pixels, SetPixelOptions } from "../../shared/types";
+import { Pixels, SetPixelOptions } from "../../shared/types";
 
 const defaultPixels: Pixels = {
   "0,0": { color: "#005bbc" },

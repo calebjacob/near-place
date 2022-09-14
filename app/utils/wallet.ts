@@ -28,8 +28,6 @@ export class Wallet {
       throw new Error('Failed to init wallet: missing "contractId" value');
     }
 
-    console.log(contractId);
-
     this.contractId = contractId;
   }
 
@@ -51,7 +49,6 @@ export class Wallet {
 
     if (isSignedIn) {
       const { accounts } = this.walletSelector.store.getState();
-
       this.wallet = await this.walletSelector.wallet();
       this.accountId = accounts[0].accountId;
     }
@@ -61,8 +58,6 @@ export class Wallet {
 
   // Sign-in method
   signIn() {
-    console.log(this);
-
     if (!this.contractId) {
       throw new Error('Missing value: "contractId"');
     }
@@ -71,11 +66,10 @@ export class Wallet {
       throw new Error('Missing value: "walletSelector"');
     }
 
-    const description = "Please select a wallet to sign in.";
     const modal = setupModal(this.walletSelector, {
       contractId: this.contractId,
-      description,
     });
+
     modal.show();
   }
 
@@ -83,7 +77,7 @@ export class Wallet {
   signOut() {
     this.wallet?.signOut();
     this.wallet = this.accountId = this.contractId = undefined;
-    window.location.reload();
+    window.location.href = "/";
   }
 
   // Make a read-only call to retrieve information from the network
@@ -125,7 +119,9 @@ export class Wallet {
     args = {},
     gas = THIRTY_TGAS,
     deposit = NO_DEPOSIT,
-  }: {
+  }: // gas = "100",
+  // deposit = "0",
+  {
     contractId?: string;
     method: string;
     args?: Record<string, any>;
@@ -136,15 +132,18 @@ export class Wallet {
       throw new Error('Missing value: "contractId"');
     }
 
-    if (!this.walletSelector) {
-      throw new Error('Missing value: "walletSelector"');
+    if (!this.accountId) {
+      this.signIn();
+      return;
     }
 
-    const { accountId } = this.walletSelector.store.getState().accounts[0];
+    if (!this.wallet) {
+      throw new Error('Missing value: "wallet"');
+    }
 
     // Sign a transaction with the "FunctionCall" action
-    return await this.wallet?.signAndSendTransaction({
-      signerId: accountId,
+    return await this.wallet.signAndSendTransaction({
+      signerId: this.accountId,
       receiverId: contractId,
       actions: [
         {

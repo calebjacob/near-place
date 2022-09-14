@@ -1,11 +1,12 @@
 import type { CanvasPixel, Pixels } from "@/../shared/types";
 
 export function normalizePixels(pixels: Pixels) {
-  const size = 10;
+  const sizeX = 100;
+  const sizeY = 100;
   const allPixels: Pixels = {};
 
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
+  for (let y = 0; y < sizeY; y++) {
+    for (let x = 0; x < sizeX; x++) {
       const location = `${x},${y}`;
 
       allPixels[location] = pixels[location] || {

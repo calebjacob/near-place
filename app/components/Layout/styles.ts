@@ -10,7 +10,13 @@ export const Root = styled("div", {
 export const Header = styled("header", {
   padding: "1rem",
   display: "flex",
+  alignItems: "center",
   justifyContent: "space-between",
+});
+
+export const Logo = styled("img", {
+  display: "block",
+  height: "2rem",
 });
 
 export const Title = styled("h1", {
@@ -18,6 +24,11 @@ export const Title = styled("h1", {
   fontWeight: 200,
   letterSpacing: "0.25rem",
   textTransform: "uppercase",
+});
+
+export const Tagline = styled("p", {
+  fontSize: "0.8rem",
+  fontWeight: 400,
 });
 
 export const Main = styled("main", {
@@ -41,12 +52,12 @@ export const Footer = styled("footer", {
   padding: "1rem",
 });
 
-export const Logo = styled("img", {
+export const FooterLogo = styled("img", {
   display: "block",
   height: "2rem",
 });
 
-export const BuiltOn = styled("a", {
+export const FooterBuiltOn = styled("a", {
   display: "inline-flex",
   alignItems: "center",
   gap: "0.25rem",

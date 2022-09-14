@@ -50,10 +50,10 @@ export const Button = styled("button", {
       },
       neutral: {
         background: "transparent",
-        boxShadow: "inset 0 0 0 1px var(--color-surface-2)",
+        boxShadow: "inset 0 0 0 1px var(--color-surface-3)",
         color: "var(--color-text-1)",
         "&:hover": {
-          background: "var(--color-surface-2)",
+          background: "var(--color-surface-3)",
         },
       },
     },

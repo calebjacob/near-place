@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { Button } from "../Button";
 import { FeatherIcon } from "../FeatherIcon";
+import { Flex } from "../Flex";
 import * as S from "./styles";
 
 interface Props {
@@ -16,7 +17,11 @@ export function Layout(props: Props) {
   return (
     <S.Root>
       <S.Header>
-        <S.Title>Place</S.Title>
+        <Flex css={{ alignItems: "center", gap: "0.5rem" }}>
+          <S.Logo src="/images/near-icon.svg" alt="NEAR" />
+          <S.Title css={{ marginRight: "0.5rem" }}>Place</S.Title>
+          <S.Tagline>A community canvas.</S.Tagline>
+        </Flex>
 
         {wallet?.isSignedIn() ? (
           <Button
@@ -29,8 +34,8 @@ export function Layout(props: Props) {
           </Button>
         ) : (
           <Button type="button" onClick={() => wallet?.signIn()}>
-            <FeatherIcon icon="log-in" />
-            Sign In
+            <FeatherIcon icon="user" />
+            Connect Wallet
           </Button>
         )}
       </S.Header>
@@ -38,10 +43,10 @@ export function Layout(props: Props) {
       <S.Main center={props.center}>{props.children}</S.Main>
 
       <S.Footer>
-        <S.BuiltOn href="https://near.org/" target="_blank">
+        <S.FooterBuiltOn href="https://near.org/" target="_blank">
           <span>Built on</span>
-          <S.Logo src="/images/near-logo.svg" alt="NEAR" />
-        </S.BuiltOn>
+          <S.FooterLogo src="/images/near-logo.svg" alt="NEAR" />
+        </S.FooterBuiltOn>
       </S.Footer>
     </S.Root>
   );
