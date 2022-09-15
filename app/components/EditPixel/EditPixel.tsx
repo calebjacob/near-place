@@ -1,5 +1,6 @@
-import type { CanvasPixel } from "@/../shared/types";
+import type { Pixel } from "@/../shared/types";
 import { useNear } from "@/hooks/near";
+import { useSocket } from "@/hooks/socket";
 import { useEffect, useState } from "react";
 import { ChromePicker, ColorChangeHandler } from "react-color";
 import { Button } from "../Button";
@@ -9,18 +10,24 @@ import { Flex } from "../Flex";
 import * as S from "./styles";
 
 interface Props {
-  pixel?: CanvasPixel;
+  pixel?: Pixel;
   target?: HTMLDivElement;
   onCancel?: () => void;
-  onUpdate?: () => Promise<void> | void;
+  onUpdate?: (pixel: Pixel) => Promise<void> | void;
 }
 
 export function EditPixel(props: Props) {
   const { contract, wallet } = useNear();
-  const [color, setColor] = useState<string | undefined>();
+  const [color, setColor] = useState("#000000");
   const [isUpdating, setIsUpdating] = useState(false);
+  const { socket } = useSocket();
   const top = props.target?.offsetTop || 0;
   const left = props.target?.offsetLeft || 0;
+
+  useEffect(() => {
+    if (!props.target || !color) return;
+    props.target.style.background = color;
+  }, [props.target, color]);
 
   useEffect(() => {
     props.target?.classList.add("selected-pixel");
@@ -35,16 +42,10 @@ export function EditPixel(props: Props) {
   }, [props.target]);
 
   useEffect(() => {
-    setColor(props.pixel?.color);
-
-    return () => {
-      setColor("");
-    };
+    setColor(props.pixel?.color || "#000000");
   }, [props.pixel]);
 
   const onColorChange: ColorChangeHandler = (color) => {
-    if (!props.target) return;
-    props.target.style.background = color.hex;
     setColor(color.hex);
   };
 
@@ -54,17 +55,19 @@ export function EditPixel(props: Props) {
     try {
       setIsUpdating(true);
 
-      const result = await contract.setPixel({
+      const updatedPixel: Pixel = {
+        color,
         location: props.pixel.location,
-        pixel: {
-          color,
-        },
+      };
+
+      await contract.setPixel({
+        pixel: updatedPixel,
       });
 
-      console.log(result);
+      socket?.emit("pixelUpdated", updatedPixel);
 
       if (props.onUpdate) {
-        await props.onUpdate();
+        await props.onUpdate(updatedPixel);
       }
     } catch (e) {
       console.error(e);

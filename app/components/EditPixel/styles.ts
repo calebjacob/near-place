@@ -32,6 +32,7 @@ export const Root = styled("div", {
     borderBottom: "4px solid var(--color-surface-2)",
     borderLeft: "4px solid transparent",
     borderRight: "4px solid transparent",
+    pointerEvents: "none",
   },
 });
 

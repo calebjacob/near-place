@@ -1,3 +1,4 @@
 DEFINE_NEAR_METHOD(NearPlace)
 DEFINE_NEAR_METHOD(get_pixels)
+DEFINE_NEAR_METHOD(reset_pixels)
 DEFINE_NEAR_METHOD(set_pixel)

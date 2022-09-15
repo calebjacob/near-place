@@ -117,11 +117,9 @@ export class Wallet {
     contractId = this.contractId,
     method,
     args = {},
-    gas = THIRTY_TGAS,
-    deposit = NO_DEPOSIT,
-  }: // gas = "100",
-  // deposit = "0",
-  {
+    gas = THIRTY_TGAS, // gas = "100",
+    deposit = NO_DEPOSIT, // deposit = "0",
+  }: {
     contractId?: string;
     method: string;
     args?: Record<string, any>;

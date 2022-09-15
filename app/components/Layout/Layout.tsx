@@ -12,7 +12,7 @@ interface Props {
 }
 
 export function Layout(props: Props) {
-  const { wallet } = useNear();
+  const { contract, wallet } = useNear();
 
   return (
     <S.Root>
@@ -24,14 +24,24 @@ export function Layout(props: Props) {
         </Flex>
 
         {wallet?.isSignedIn() ? (
-          <Button
-            color="neutral"
-            type="button"
-            onClick={() => wallet?.signOut()}
-          >
-            <FeatherIcon icon="log-out" />
-            Sign Out
-          </Button>
+          <Flex css={{ justifyContent: "flex-end" }}>
+            <Button
+              color="neutral"
+              type="button"
+              onClick={() => contract?.resetPixels()}
+            >
+              Reset
+            </Button>
+
+            <Button
+              color="neutral"
+              type="button"
+              onClick={() => wallet?.signOut()}
+            >
+              <FeatherIcon icon="log-out" />
+              Sign Out
+            </Button>
+          </Flex>
         ) : (
           <Button type="button" onClick={() => wallet?.signIn()}>
             <FeatherIcon icon="user" />

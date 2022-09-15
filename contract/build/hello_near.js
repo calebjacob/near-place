@@ -42,6 +42,16 @@ var PromiseError;
   PromiseError[PromiseError["NotReady"] = 1] = "NotReady";
 })(PromiseError || (PromiseError = {}));
 
+function u8ArrayToBytes(array) {
+  let ret = "";
+
+  for (let e of array) {
+    ret += String.fromCharCode(e);
+  }
+
+  return ret;
+} // TODO this function is a bit broken and the type can't be string
+
 /*! scure-base - MIT License (c) 2022 Paul Miller (paulmillr.com) */
 function assertNumber(n) {
   if (!Number.isSafeInteger(n)) throw new Error(`Wrong integer: ${n}`);
@@ -428,12 +438,6 @@ var CurveType;
 
 const U64_MAX = 2n ** 64n - 1n;
 const EVICTED_REGISTER = U64_MAX - 1n;
-function log(...params) {
-  env.log(`${params.map(x => x === undefined ? 'undefined' : x) // Stringify undefined
-  .map(x => typeof x === 'object' ? JSON.stringify(x) : x) // Convert Objects to strings
-  .join(' ')}` // Convert to string
-  );
-}
 function predecessorAccountId() {
   env.predecessor_account_id(0);
   return env.read_register(0);
@@ -450,6 +454,18 @@ function storageRead(key) {
     return null;
   }
 }
+function storageHasKey(key) {
+  let ret = env.storage_has_key(key);
+
+  if (ret === 1n) {
+    return true;
+  } else {
+    return false;
+  }
+}
+function storageGetEvicted() {
+  return env.read_register(EVICTED_REGISTER);
+}
 function currentAccountId() {
   env.current_account_id(0);
   return env.read_register(0);
@@ -460,6 +476,15 @@ function input() {
 }
 function storageWrite(key, value) {
   let exist = env.storage_write(key, value, EVICTED_REGISTER);
+
+  if (exist === 1n) {
+    return true;
+  }
+
+  return false;
+}
+function storageRemove(key) {
+  let exist = env.storage_remove(key, EVICTED_REGISTER);
 
   if (exist === 1n) {
     return true;
@@ -541,52 +566,411 @@ function NearBindgen({
   };
 }
 
-var _dec, _dec2, _dec3, _class, _class2;
-const defaultPixels = {
-  "0,0": {
-    color: "#005bbc"
-  },
-  "1,0": {
-    color: "#005bbc"
-  },
-  "2,0": {
-    color: "#005bbc"
-  },
-  "0,1": {
-    color: "#ffd600"
-  },
-  "1,1": {
-    color: "#ffd600"
-  },
-  "2,1": {
-    color: "#ffd600"
-  },
-  "0,2": {
-    color: "#005bbc"
-  },
-  "1,2": {
-    color: "#005bbc"
-  },
-  "2,2": {
-    color: "#005bbc"
+class LookupMap {
+  constructor(keyPrefix) {
+    this.keyPrefix = keyPrefix;
   }
-};
-let NearPlace = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = call({}), _dec(_class = (_class2 = class NearPlace {
-  pixels = defaultPixels;
+
+  containsKey(key) {
+    let storageKey = this.keyPrefix + JSON.stringify(key);
+    return storageHasKey(storageKey);
+  }
+
+  get(key) {
+    let storageKey = this.keyPrefix + JSON.stringify(key);
+    let raw = storageRead(storageKey);
+
+    if (raw !== null) {
+      return JSON.parse(raw);
+    }
+
+    return null;
+  }
+
+  remove(key) {
+    let storageKey = this.keyPrefix + JSON.stringify(key);
+
+    if (storageRemove(storageKey)) {
+      return JSON.parse(storageGetEvicted());
+    }
+
+    return null;
+  }
+
+  set(key, value) {
+    let storageKey = this.keyPrefix + JSON.stringify(key);
+    let storageValue = JSON.stringify(value);
+
+    if (storageWrite(storageKey, storageValue)) {
+      return JSON.parse(storageGetEvicted());
+    }
+
+    return null;
+  }
+
+  extend(objects) {
+    for (let kv of objects) {
+      this.set(kv[0], kv[1]);
+    }
+  }
+
+  serialize() {
+    return JSON.stringify(this);
+  } // converting plain object to class object
+
+
+  static deserialize(data) {
+    return new LookupMap(data.keyPrefix);
+  }
+
+}
+
+const ERR_INDEX_OUT_OF_BOUNDS = "Index out of bounds";
+const ERR_INCONSISTENT_STATE$1 = "The collection is an inconsistent state. Did previous smart contract execution terminate unexpectedly?";
+
+function indexToKey(prefix, index) {
+  let data = new Uint32Array([index]);
+  let array = new Uint8Array(data.buffer);
+  let key = u8ArrayToBytes(array);
+  return prefix + key;
+} /// An iterable implementation of vector that stores its content on the trie.
+/// Uses the following map: index -> element
+
+
+class Vector {
+  constructor(prefix) {
+    this.length = 0;
+    this.prefix = prefix;
+  }
+
+  isEmpty() {
+    return this.length == 0;
+  }
+
+  get(index) {
+    if (index >= this.length) {
+      return null;
+    }
+
+    let storageKey = indexToKey(this.prefix, index);
+    return JSON.parse(storageRead(storageKey));
+  } /// Removes an element from the vector and returns it in serialized form.
+  /// The removed element is replaced by the last element of the vector.
+  /// Does not preserve ordering, but is `O(1)`.
+
+
+  swapRemove(index) {
+    if (index >= this.length) {
+      throw new Error(ERR_INDEX_OUT_OF_BOUNDS);
+    } else if (index + 1 == this.length) {
+      return this.pop();
+    } else {
+      let key = indexToKey(this.prefix, index);
+      let last = this.pop();
+
+      if (storageWrite(key, JSON.stringify(last))) {
+        return JSON.parse(storageGetEvicted());
+      } else {
+        throw new Error(ERR_INCONSISTENT_STATE$1);
+      }
+    }
+  }
+
+  push(element) {
+    let key = indexToKey(this.prefix, this.length);
+    this.length += 1;
+    storageWrite(key, JSON.stringify(element));
+  }
+
+  pop() {
+    if (this.isEmpty()) {
+      return null;
+    } else {
+      let lastIndex = this.length - 1;
+      let lastKey = indexToKey(this.prefix, lastIndex);
+      this.length -= 1;
+
+      if (storageRemove(lastKey)) {
+        return JSON.parse(storageGetEvicted());
+      } else {
+        throw new Error(ERR_INCONSISTENT_STATE$1);
+      }
+    }
+  }
+
+  replace(index, element) {
+    if (index >= this.length) {
+      throw new Error(ERR_INDEX_OUT_OF_BOUNDS);
+    } else {
+      let key = indexToKey(this.prefix, index);
+
+      if (storageWrite(key, JSON.stringify(element))) {
+        return JSON.parse(storageGetEvicted());
+      } else {
+        throw new Error(ERR_INCONSISTENT_STATE$1);
+      }
+    }
+  }
+
+  extend(elements) {
+    for (let element of elements) {
+      this.push(element);
+    }
+  }
+
+  [Symbol.iterator]() {
+    return new VectorIterator(this);
+  }
+
+  clear() {
+    for (let i = 0; i < this.length; i++) {
+      let key = indexToKey(this.prefix, i);
+      storageRemove(key);
+    }
+
+    this.length = 0;
+  }
+
+  toArray() {
+    let ret = [];
+
+    for (let v of this) {
+      ret.push(v);
+    }
+
+    return ret;
+  }
+
+  serialize() {
+    return JSON.stringify(this);
+  } // converting plain object to class object
+
+
+  static deserialize(data) {
+    let vector = new Vector(data.prefix);
+    vector.length = data.length;
+    return vector;
+  }
+
+}
+class VectorIterator {
+  constructor(vector) {
+    this.current = 0;
+    this.vector = vector;
+  }
+
+  next() {
+    if (this.current < this.vector.length) {
+      let value = this.vector.get(this.current);
+      this.current += 1;
+      return {
+        value,
+        done: false
+      };
+    }
+
+    return {
+      value: null,
+      done: true
+    };
+  }
+
+}
+
+const ERR_INCONSISTENT_STATE = "The collection is an inconsistent state. Did previous smart contract execution terminate unexpectedly?";
+class UnorderedMap {
+  constructor(prefix) {
+    this.prefix = prefix;
+    this.keys = new Vector(prefix + 'u'); // intentional different prefix with old UnorderedMap
+
+    this.values = new LookupMap(prefix + 'm');
+  }
+
+  get length() {
+    let keysLen = this.keys.length;
+    return keysLen;
+  }
+
+  isEmpty() {
+    let keysIsEmpty = this.keys.isEmpty();
+    return keysIsEmpty;
+  }
+
+  get(key) {
+    let valueAndIndex = this.values.get(key);
+
+    if (valueAndIndex === null) {
+      return null;
+    }
+
+    let value = valueAndIndex[0];
+    return value;
+  }
+
+  set(key, value) {
+    let valueAndIndex = this.values.get(key);
+
+    if (valueAndIndex !== null) {
+      let oldValue = valueAndIndex[0];
+      valueAndIndex[0] = value;
+      this.values.set(key, valueAndIndex);
+      return oldValue;
+    }
+
+    let nextIndex = this.length;
+    this.keys.push(key);
+    this.values.set(key, [value, nextIndex]);
+    return null;
+  }
+
+  remove(key) {
+    let oldValueAndIndex = this.values.remove(key);
+
+    if (oldValueAndIndex === null) {
+      return null;
+    }
+
+    let index = oldValueAndIndex[1];
+
+    if (this.keys.swapRemove(index) === null) {
+      throw new Error(ERR_INCONSISTENT_STATE);
+    } // the last key is swapped to key[index], the corresponding [value, index] need update
+
+
+    if (this.keys.length > 0 && index != this.keys.length) {
+      // if there is still elements and it was not the last element
+      let swappedKey = this.keys.get(index);
+      let swappedValueAndIndex = this.values.get(swappedKey);
+
+      if (swappedValueAndIndex === null) {
+        throw new Error(ERR_INCONSISTENT_STATE);
+      }
+
+      this.values.set(swappedKey, [swappedValueAndIndex[0], index]);
+    }
+
+    return oldValueAndIndex[0];
+  }
+
+  clear() {
+    for (let key of this.keys) {
+      // Set instead of remove to avoid loading the value from storage.
+      this.values.set(key, null);
+    }
+
+    this.keys.clear();
+  }
+
+  toArray() {
+    let ret = [];
+
+    for (let v of this) {
+      ret.push(v);
+    }
+
+    return ret;
+  }
+
+  [Symbol.iterator]() {
+    return new UnorderedMapIterator(this);
+  }
+
+  extend(kvs) {
+    for (let [k, v] of kvs) {
+      this.set(k, v);
+    }
+  }
+
+  serialize() {
+    return JSON.stringify(this);
+  } // converting plain object to class object
+
+
+  static deserialize(data) {
+    let map = new UnorderedMap(data.prefix); // reconstruct keys Vector
+
+    map.keys = new Vector(data.prefix + "u");
+    map.keys.length = data.keys.length; // reconstruct values LookupMap
+
+    map.values = new LookupMap(data.prefix + "m");
+    return map;
+  }
+
+}
+
+class UnorderedMapIterator {
+  constructor(unorderedMap) {
+    this.keys = new VectorIterator(unorderedMap.keys);
+    this.map = unorderedMap.values;
+  }
+
+  next() {
+    let key = this.keys.next();
+    let value;
+
+    if (!key.done) {
+      value = this.map.get(key.value);
+
+      if (value === null) {
+        throw new Error(ERR_INCONSISTENT_STATE);
+      }
+    }
+
+    return {
+      value: [key.value, value ? value[0] : value],
+      done: key.done
+    };
+  }
+
+}
+
+var _dec, _dec2, _dec3, _dec4, _class, _class2;
+let NearPlace = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = call({}), _dec4 = call({}), _dec(_class = (_class2 = class NearPlace {
+  constructor() {
+    this.pixels = new UnorderedMap("pixels");
+  }
 
   // This method is read-only and can be called for free
   get_pixels() {
-    return this.pixels || defaultPixels;
+    return this.pixels.toArray();
   }
 
   // This method changes the state, for which it cost gas
-  set_pixel(params) {
-    log(`Saving pixel ${params.location} - ${params.pixel}`);
-    this.pixels = this.pixels || {};
-    this.pixels[params.location] = params.pixel;
+  set_pixel({
+    pixel
+  }) {
+    this.pixels.set(pixel.location, {
+      color: pixel.color
+    });
   }
 
-}, (_applyDecoratedDescriptor(_class2.prototype, "get_pixels", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "get_pixels"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "set_pixel", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "set_pixel"), _class2.prototype)), _class2)) || _class);
+  // This method changes the state, for which it cost gas
+  reset_pixels() {
+    this.pixels.clear();
+  }
+
+}, (_applyDecoratedDescriptor(_class2.prototype, "get_pixels", [_dec2], Object.getOwnPropertyDescriptor(_class2.prototype, "get_pixels"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "set_pixel", [_dec3], Object.getOwnPropertyDescriptor(_class2.prototype, "set_pixel"), _class2.prototype), _applyDecoratedDescriptor(_class2.prototype, "reset_pixels", [_dec4], Object.getOwnPropertyDescriptor(_class2.prototype, "reset_pixels"), _class2.prototype)), _class2)) || _class);
+function reset_pixels() {
+  let _state = NearPlace._getState();
+
+  if (!_state && NearPlace._requireInit()) {
+    throw new Error("Contract must be initialized");
+  }
+
+  let _contract = NearPlace._create();
+
+  if (_state) {
+    NearPlace._reconstruct(_contract, _state);
+  }
+
+  let _args = NearPlace._getArgs();
+
+  let _result = _contract.reset_pixels(_args);
+
+  NearPlace._saveToStorage(_contract);
+
+  if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(NearPlace._serialize(_result));
+}
 function set_pixel() {
   let _state = NearPlace._getState();
 
@@ -627,5 +1011,5 @@ function get_pixels() {
   if (_result !== undefined) if (_result && _result.constructor && _result.constructor.name === "NearPromise") _result.onReturn();else env.value_return(NearPlace._serialize(_result));
 }
 
-export { NearPlace, get_pixels, set_pixel };
+export { NearPlace, get_pixels, reset_pixels, set_pixel };
 //# sourceMappingURL=hello_near.js.map

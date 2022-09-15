@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Contract } from "../utils/contract";
 import { Wallet } from "../utils/wallet";
 
-const contractId = "dev-1663085624023-20907305216118"; // TODO: Pull in through .env file
+const contractId = "dev-1663262480801-99611004074948"; // TODO: Pull in through .env file
 let wallet: Wallet | undefined;
 let contract: Contract | undefined;
 

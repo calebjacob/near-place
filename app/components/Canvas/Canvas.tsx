@@ -1,4 +1,4 @@
-import type { CanvasPixel, Pixels } from "@/../shared/types";
+import type { Pixel, Pixels } from "@/../shared/types";
 import { normalizePixels } from "@/utils/canvas";
 import { memo, MouseEventHandler, useEffect, useState } from "react";
 
@@ -6,11 +6,11 @@ import * as S from "./styles";
 
 interface Props {
   pixels?: Pixels;
-  onPixelSelect?: (pixel: CanvasPixel, target: HTMLDivElement) => void;
+  onPixelSelect?: (pixel: Pixel, target: HTMLDivElement) => void;
 }
 
 function CanvasInternal(props: Props) {
-  const [pixels, setPixels] = useState<CanvasPixel[]>([]);
+  const [pixels, setPixels] = useState<Pixel[]>([]);
 
   useEffect(() => {
     if (props.pixels) {
@@ -35,7 +35,6 @@ function CanvasInternal(props: Props) {
           <S.Pixel
             role="button"
             aria-label="Edit Pixel"
-            tabIndex={0}
             key={pixel.location}
             css={{ background: pixel.color }}
             data-location={pixel.location}
