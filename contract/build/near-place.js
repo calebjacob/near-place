@@ -1012,4 +1012,4 @@ function get_pixels() {
 }
 
 export { NearPlace, get_pixels, reset_pixels, set_pixel };
-//# sourceMappingURL=hello_near.js.map
+//# sourceMappingURL=near-place.js.map
