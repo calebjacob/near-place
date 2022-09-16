@@ -15,9 +15,9 @@ export class NearPlace {
   }
 
   @call({}) // This method changes the state, for which it cost gas
-  set_pixel({ pixel }: SetPixelOptions): void {
-    this.pixels.set(pixel.location, {
-      color: pixel.color,
+  set_pixel({ color, location }: SetPixelOptions): void {
+    this.pixels.set(location, {
+      color,
     });
   }
 

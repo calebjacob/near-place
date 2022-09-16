@@ -937,10 +937,11 @@ let NearPlace = (_dec = NearBindgen({}), _dec2 = view({}), _dec3 = call({}), _de
 
   // This method changes the state, for which it cost gas
   set_pixel({
-    pixel
+    color,
+    location
   }) {
-    this.pixels.set(pixel.location, {
-      color: pixel.color
+    this.pixels.set(location, {
+      color
     });
   }
 

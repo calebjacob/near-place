@@ -11,11 +11,16 @@ export function normalizePixels(pixels: Pixels) {
       const defaultPixel: Pixel = {
         color: "",
         location,
+        x,
+        y,
       };
-
-      allPixels[location] = pixels[location] || defaultPixel;
+      const pixel: Pixel = {
+        ...defaultPixel,
+        ...pixels[location],
+      };
+      allPixels[location] = pixel;
     }
   }
 
-  return Object.values(allPixels);
+  return allPixels;
 }

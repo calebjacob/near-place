@@ -13,16 +13,30 @@ interface Props {
   pixel?: Pixel;
   target?: HTMLDivElement;
   onCancel?: () => void;
-  onUpdate?: (pixel: Pixel) => Promise<void> | void;
+  onUpdate?: (pixel: Pixel) => void;
 }
 
 export function EditPixel(props: Props) {
   const { contract, wallet } = useNear();
-  const [color, setColor] = useState("#000000");
+  const [color, setColor] = useState<string>("#000000");
   const [isUpdating, setIsUpdating] = useState(false);
   const { socket } = useSocket();
   const top = props.target?.offsetTop || 0;
   const left = props.target?.offsetLeft || 0;
+
+  useEffect(() => {
+    function closeOnEscape(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        props.onCancel && props.onCancel();
+      }
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [props]);
 
   useEffect(() => {
     if (!props.target || !color) return;
@@ -36,13 +50,22 @@ export function EditPixel(props: Props) {
     return () => {
       if (props.target) {
         props.target.classList.remove("selected-pixel");
-        props.target.style.background = "";
+
+        setTimeout(() => {
+          if (props.target) {
+            props.target.style.background = "";
+          }
+        }, 100);
       }
     };
   }, [props.target]);
 
   useEffect(() => {
-    setColor(props.pixel?.color || "#000000");
+    setIsUpdating(false);
+
+    if (props.pixel?.color) {
+      setColor(props.pixel.color);
+    }
   }, [props.pixel]);
 
   const onColorChange: ColorChangeHandler = (color) => {
@@ -50,24 +73,32 @@ export function EditPixel(props: Props) {
   };
 
   async function updatePixel() {
-    if (!contract || !color || !props.pixel) return;
+    if (!contract || !props.pixel) return;
+
+    const updatedColor = color;
+    const updatedLocation = props.pixel.location;
 
     try {
       setIsUpdating(true);
 
       const updatedPixel: Pixel = {
-        color,
-        location: props.pixel.location,
+        color: updatedColor,
+        location: updatedLocation,
+        x: parseInt(updatedLocation.split(",")[0]),
+        y: parseInt(updatedLocation.split(",")[1]),
       };
 
-      await contract.setPixel({
-        pixel: updatedPixel,
+      // We will be optimistic that "setPixel()" will work, and make the UI respond instantly:
+
+      contract.setPixel({
+        color: updatedColor,
+        location: updatedLocation,
       });
 
       socket?.emit("pixelUpdated", updatedPixel);
 
       if (props.onUpdate) {
-        await props.onUpdate(updatedPixel);
+        props.onUpdate(updatedPixel);
       }
     } catch (e) {
       console.error(e);

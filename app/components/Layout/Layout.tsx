@@ -1,5 +1,4 @@
 import { useNear } from "@/hooks/near";
-import Image from "next/image";
 import type { ReactNode } from "react";
 import { Button } from "../Button";
 import { FeatherIcon } from "../FeatherIcon";

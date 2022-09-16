@@ -1,4 +1,5 @@
 import type { Pixels, SetPixelOptions } from "../../shared/types";
+import { normalizePixels } from "./canvas";
 import type { Wallet } from "./wallet";
 
 export class Contract {
@@ -9,7 +10,7 @@ export class Contract {
   }
 
   async getPixels() {
-    const pixels: Pixels = {};
+    let pixels: Pixels = {};
     const response = await this.wallet.viewMethod({ method: "get_pixels" });
 
     response.forEach((item: any) => {
@@ -18,6 +19,8 @@ export class Contract {
         ...item[1],
       };
     });
+
+    pixels = normalizePixels(pixels);
 
     return pixels;
   }
@@ -29,9 +32,13 @@ export class Contract {
   }
 
   async setPixel(options: SetPixelOptions) {
-    return await this.wallet.callMethod({
-      method: "set_pixel",
-      args: options,
-    });
+    try {
+      return await this.wallet.callMethod({
+        method: "set_pixel",
+        args: options,
+      });
+    } catch (e) {
+      console.error(e);
+    }
   }
 }

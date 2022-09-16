@@ -8,23 +8,28 @@ import * as Dialog from "@/components/Dialog";
 import { EditPixel } from "@/components/EditPixel";
 import Head from "next/head";
 import { useSocket } from "@/hooks/socket";
+import { Spinner } from "@/components/Spinner";
 
 const Home: NextPage = () => {
   const [pixels, setPixels] = useState<Pixels>();
   const { contract, wallet } = useNear();
   const { socket } = useSocket();
-  const [selectedPixel, setSelectedPixel] = useState<Pixel | undefined>();
+  const [selectedPixelLocation, setSelectedPixelLocation] = useState<
+    string | undefined
+  >();
   const [selectedPixelTarget, setSelectedPixelTarget] = useState<
     HTMLDivElement | undefined
   >();
 
+  const selectedPixel = pixels && pixels[selectedPixelLocation || ""];
+
   const onPixelSelect = useCallback((pixel: Pixel, target: HTMLDivElement) => {
-    setSelectedPixel(pixel);
+    setSelectedPixelLocation(pixel.location);
     setSelectedPixelTarget(target);
   }, []);
 
   const onPixelDeselect = useCallback(() => {
-    setSelectedPixel(undefined);
+    setSelectedPixelLocation(undefined);
     setSelectedPixelTarget(undefined);
   }, []);
 
@@ -35,8 +40,14 @@ const Home: NextPage = () => {
         [pixel.location]: pixel,
       };
     });
-    setSelectedPixel(undefined);
-    setSelectedPixelTarget(undefined);
+
+    setSelectedPixelLocation((value) => {
+      if (value === pixel.location) {
+        setSelectedPixelTarget(undefined);
+        return undefined;
+      }
+      return value;
+    });
   }, []);
 
   useEffect(() => {
@@ -76,14 +87,20 @@ const Home: NextPage = () => {
       </Head>
 
       <Layout center>
-        <Canvas pixels={pixels} onPixelSelect={onPixelSelect} />
+        {pixels ? (
+          <>
+            <Canvas pixels={pixels} onPixelSelect={onPixelSelect} />
 
-        <EditPixel
-          pixel={selectedPixel}
-          target={selectedPixelTarget}
-          onCancel={onPixelDeselect}
-          onUpdate={onPixelUpdate}
-        />
+            <EditPixel
+              pixel={selectedPixel}
+              target={selectedPixelTarget}
+              onCancel={onPixelDeselect}
+              onUpdate={onPixelUpdate}
+            />
+          </>
+        ) : (
+          <Spinner />
+        )}
       </Layout>
     </>
   );

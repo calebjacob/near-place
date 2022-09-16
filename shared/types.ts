@@ -1,6 +1,8 @@
 export interface Pixel {
   color: string;
   location: string;
+  x: number;
+  y: number;
 }
 
 export interface Pixels {
@@ -8,5 +10,6 @@ export interface Pixels {
 }
 
 export interface SetPixelOptions {
-  pixel: Pixel;
+  color: string;
+  location: string;
 }

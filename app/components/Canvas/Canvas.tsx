@@ -1,5 +1,4 @@
 import type { Pixel, Pixels } from "@/../shared/types";
-import { normalizePixels } from "@/utils/canvas";
 import { memo, MouseEventHandler, useEffect, useState } from "react";
 
 import * as S from "./styles";
@@ -14,7 +13,7 @@ function CanvasInternal(props: Props) {
 
   useEffect(() => {
     if (props.pixels) {
-      setPixels(normalizePixels(props.pixels));
+      setPixels(Object.values(props.pixels));
     }
   }, [props.pixels]);
 
@@ -30,7 +29,7 @@ function CanvasInternal(props: Props) {
 
   return (
     <>
-      <S.Canvas onClick={handlePixelClick}>
+      <S.Canvas onClick={handlePixelClick} id="canvas">
         {pixels.map((pixel) => (
           <S.Pixel
             role="button"
